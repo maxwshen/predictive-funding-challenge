@@ -1,0 +1,7 @@
+[project]
+name = "deepfunding"
+version = "0.1.0"
+description = "Exploring fair open-source dependency tree funding allocation by using AI models to allocate weights and validating results with human spot-checking"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["ipykernel>=6.29.5", "polars>=1.17.1"]
