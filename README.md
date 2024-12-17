@@ -38,6 +38,12 @@ Make sure you have [`uv` installed](https://docs.astral.sh/uv/). Then run the fo
 uv sync
 ```
 
+### 🔐 Environment
+
+Create a `.env` file in the root directory with the following variables:
+
+- `GOOGLE_APPLICATION_CREDENTIALS`: Path to a Google Cloud service account with BigQuery access.
+
 ## 📚 Resources
 
 - [Official Website](https://deepfunding.org) - [FAQ](https://deepfunding.org/faq)
