@@ -12,6 +12,7 @@ dependencies = [
     "pyarrow>=18.1.0",
     "pygithub>=2.5.0",
     "httpx>=0.28.1",
+    "tqdm>=4.67.1",
 ]
 
 [build-system]
