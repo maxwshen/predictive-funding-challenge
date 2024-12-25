@@ -19,23 +19,19 @@ This creates a scalable, efficient system that can handle millions of dependenci
 
 ## 📦 Data
 
-There are several datasets available. The main data we are dealing with are GitHub repositories and their dependencies. Additionally, we have a proxy dataset with weights derived from their relative funding amounts in the past.
+For the [mini-contest](https://huggingface.co/spaces/DeepFunding/PredictiveFundingChallengeforOpenSourceDependencies), there are several datasets available. The main dataset represents pairs of GitHub repositories. We have some weights derived from their relative funding amounts in the past.
 
 ## 🎯 Goal
 
-The goal is predicting each repository relative importance based on how open source maintainers and a jury would rank them. For that, we need to compare each of these repos with one another and give a relative value between them, such that the total in each case adds up to 1.
+The goal is predicting the relative funding received between any 2 projects. For that, we need to compare each of these repos with one another and give a relative value between them, such that the total in each case adds up to 1.
 
 ## 📊 Evaluation
 
-A human jury will perform detailed analysis on randomly selected edges, providing a score between 0 and 1 for each comparison. Only a small fraction of predictions are actually validated by humans. Models that consistently align with human judgments earn higher weights. This creates a fast, cheap, and credibly neutral mechanism that mirrors trustworthy human judgment.
+*Winners* are decided based on *novelty and approach taken to predict answers for 1023 comparisons*. They are determined by their marginal contribution: how much better the final outcome is compared to if their submission (code or dataset) had never existed? Even if someone doesn't make a submission but provides a valuable dataset that all other contestants end up using, that would be rewarded.
 
-The jury will evaluate:
+The evaluation metric is Mean Squared Error (MSE). The lower, the better.
 
-1. Replaceability: How much time has the dependency saved you?
-2. Specificity: Is the dependency specific to EVM or a general building block like aes or hashes/nobles
-3. Additionality: Is the dependency already well funded?
-
-The models will be evaluated on how well they align with the jury's scores using Mean Squared Error (MSE). Answers given by the model must be self-consistent, ie. for any triple _a_,_b_,_c_, `c/a = c/b * b/a`. Ensure mathematical consistency in outputs given to reflect logical relationships rather than reflecting biases from the training data.
+Submission weights must be self-consistent, ie. for any triple _a_,_b_,_c_, `c/a = c/b * b/a`. Ensure mathematical consistency in outputs given to reflect logical relationships rather than reflecting biases from the training data.
 
 ## 🚀 Quickstart
 
