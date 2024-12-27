@@ -194,45 +194,6 @@ wheels = [
 ]
 
 [[package]]
-name = "deepfunding"
-version = "1.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "altair" },
-    { name = "google-cloud-bigquery" },
-    { name = "google-cloud-bigquery-storage" },
-    { name = "httpx" },
-    { name = "ipykernel" },
-    { name = "polars" },
-    { name = "pyarrow" },
-    { name = "pygithub" },
-    { name = "scikit-learn" },
-    { name = "tqdm" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "altair", specifier = ">=5.5.0" },
-    { name = "google-cloud-bigquery", specifier = ">=3.27.0" },
-    { name = "google-cloud-bigquery-storage", specifier = ">=2.27.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "polars", specifier = ">=1.18.0" },
-    { name = "pyarrow", specifier = ">=18.1.0" },
-    { name = "pygithub", specifier = ">=2.5.0" },
-    { name = "scikit-learn", specifier = ">=1.6.0" },
-    { name = "tqdm", specifier = ">=4.67.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.8.4" }]
-
-[[package]]
 name = "deprecated"
 version = "1.2.15"
 source = { registry = "https://pypi.org/simple" }
@@ -714,6 +675,45 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/09/9e/184f777b41bba086463771edf7dbd3ba13c071222117ab5c19c99e76bc66/polars-1.18.0-cp39-abi3-win_amd64.whl", hash = "sha256:a79ef2542454d9cace63e8fa528cf808b6377077173be522df9b8c0e792ce96a", size = 32356143 },
     { url = "https://files.pythonhosted.org/packages/2c/dc/5b3345688bb14cda0ea23f42c96553aa75c4b8a6992f38cac0df6a44ec31/polars-1.18.0-cp39-abi3-win_arm64.whl", hash = "sha256:52b543da52f4f6a661a2fa3cdd4b499938bdb34eeae538ec3bcef6c8c41bfc33", size = 28631561 },
 ]
+
+[[package]]
+name = "predictive-funding-challenge"
+version = "1.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "altair" },
+    { name = "google-cloud-bigquery" },
+    { name = "google-cloud-bigquery-storage" },
+    { name = "httpx" },
+    { name = "ipykernel" },
+    { name = "polars" },
+    { name = "pyarrow" },
+    { name = "pygithub" },
+    { name = "scikit-learn" },
+    { name = "tqdm" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "altair", specifier = ">=5.5.0" },
+    { name = "google-cloud-bigquery", specifier = ">=3.27.0" },
+    { name = "google-cloud-bigquery-storage", specifier = ">=2.27.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "polars", specifier = ">=1.18.0" },
+    { name = "pyarrow", specifier = ">=18.1.0" },
+    { name = "pygithub", specifier = ">=2.5.0" },
+    { name = "scikit-learn", specifier = ">=1.6.0" },
+    { name = "tqdm", specifier = ">=4.67.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.8.4" }]
 
 [[package]]
 name = "prompt-toolkit"
