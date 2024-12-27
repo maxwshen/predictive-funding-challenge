@@ -1,35 +1,20 @@
-# Deep Funding 🌱
+# Predictive Funding Challenge 🌱
 
-Exploring fair open-source dependency tree funding allocation by using AI models to allocate weights and validating results with human spot-checking.
-
-## 🤔 Why Deep Funding?
-
-Traditional public goods funding faces scaling challenges:
-
-- Funders must evaluate each project individually
-- Large-group funding leads to public campaigning
-- Small-group funding creates favoritism and limited scale
-
-Deep Funding solves this through:
-
-1. Value as a graph: Instead of abstract "value to humanity", we measure relative contributions between dependencies
-2. Distilled human judgment: An open market of AI models allocates weights, validated by random human spot-checks
-
-This creates a scalable, efficient system that can handle millions of dependencies while maintaining human oversight. It avoids difficult abstract questions about absolute value and instead focuses on concrete, local comparisons ("compare A and B's direct impact on C"). Also creates an open market for allocation models that can scale beyond a small number of projects.
+A machine learning challenge to predict relative funding between open source projects, aiming to create scalable and fair public goods funding allocation.
 
 ## 📦 Data
 
-For the [mini-contest](https://huggingface.co/spaces/DeepFunding/PredictiveFundingChallengeforOpenSourceDependencies), there are several datasets available. The main dataset represents pairs of GitHub repositories. We have some weights derived from their relative funding amounts in the past.
+For the [contest](https://huggingface.co/spaces/DeepFunding/PredictiveFundingChallengeforOpenSourceDependencies), the dataset represents pairs of GitHub repositories and their funding amounts in historical funding rounds data.
 
 ## 🎯 Goal
 
-The goal is predicting the relative funding received between any 2 projects. For that, we need to compare each of these repos with one another and give a relative value between them, such that the total in each case adds up to 1.
+The goal is predicting the relative funding received between any pair of projects. For that, we need to compare each of these repos with one another and give a relative value between them, such that the total in each case adds up to 1.
 
 ## 📊 Evaluation
 
-*Winners* are decided based on *novelty and approach taken to predict answers for 1023 comparisons*. They are determined by their marginal contribution: how much better the final outcome is compared to if their submission (code or dataset) had never existed? Even if someone doesn't make a submission but provides a valuable dataset that all other contestants end up using, that would be rewarded.
+*Winners* are decided based on *novelty and approach taken to predict answers for 1023 comparisons*. They are determined by their marginal contribution: how much better the final outcome is compared to if their submission (code or dataset) had never existed? That means that even if someone doesn't make a submission but provides a valuable dataset that all other contestants end up using, that would be rewarded.
 
-The evaluation metric is Mean Squared Error (MSE). The lower, the better.
+The evaluation metric is **Mean Squared Error (MSE)**. The lower, the better.
 
 Submission weights must be self-consistent, ie. for any triple _a_,_b_,_c_, `c/a = c/b * b/a`. Ensure mathematical consistency in outputs given to reflect logical relationships rather than reflecting biases from the training data.
 
@@ -54,4 +39,4 @@ Create a `.env` file in the root directory with the following variables:
 - [GitHub Repository](https://github.com/deepfunding/dependency-graph)
 - [HuggingFace Competition](https://huggingface.co/spaces/DeepFunding/PredictiveFundingChallengeforOpenSourceDependencies)
 - [Demo of the Voting UI](https://pairwise-df-demo.vercel.app/allocation)
-- [Deep Funding podcast](https://www.youtube.com/watch?v=ygaEBHYllPU)
+- [Deep Funding Podcast](https://www.youtube.com/watch?v=ygaEBHYllPU)

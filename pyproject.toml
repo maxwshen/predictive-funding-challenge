@@ -1,7 +1,7 @@
 [project]
-name = "deepfunding"
+name = "predictive-funding-challenge"
 version = "1.0.0"
-description = "Exploring fair open-source dependency tree funding allocation by using AI models to allocate weights and validating results with human spot-checking"
+description = "Creating datasets and models to predict the amount of past funding received by open source projects"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
