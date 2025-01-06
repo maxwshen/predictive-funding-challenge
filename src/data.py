@@ -20,6 +20,17 @@ def get_dataframes() -> Tuple[pl.DataFrame, pl.DataFrame]:
     df_train = pl.read_csv(f"{repository_url}/dataset.csv")
     df_test = pl.read_csv(f"{repository_url}/test.csv")
 
+    # Light preprocessing to get project IDs instead of full URLs
+    df_train = df_train.with_columns(
+        pl.col("project_a").str.split("github.com/").list.last().alias("project_a"),
+        pl.col("project_b").str.split("github.com/").list.last().alias("project_b"),
+    )
+
+    df_test = df_test.with_columns(
+        pl.col("project_a").str.split("github.com/").list.last().alias("project_a"),
+        pl.col("project_b").str.split("github.com/").list.last().alias("project_b"),
+    )
+
     return df_train, df_test
 
 
