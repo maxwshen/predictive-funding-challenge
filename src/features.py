@@ -2,10 +2,6 @@ from datetime import datetime
 
 import numpy as np
 import polars as pl
-from sentence_transformers import SentenceTransformer
-
-# Initialize the embedding model globally
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def mirror_train_data(df: pl.DataFrame) -> pl.DataFrame:

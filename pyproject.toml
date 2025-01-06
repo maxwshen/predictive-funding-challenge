@@ -15,7 +15,7 @@ dependencies = [
     "pyarrow>=18.1.0",
     "pygithub>=2.5.0",
     "scikit-learn>=1.6.0",
-    "sentence-transformers>=3.3.1",
+    "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
