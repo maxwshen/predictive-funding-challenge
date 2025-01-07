@@ -9,6 +9,7 @@ from sklearn.model_selection import KFold
 from src.data import get_dataframes, get_projects_info
 from src.features import (
     add_github_projects_data,
+    add_target_encoding,
     extract_activity_features,
     extract_ratio_features,
     extract_temporal_features,
@@ -46,18 +47,45 @@ def get_features() -> list[str]:
         "is_disabled_b",
         "open_issues_b",
         "subscribers_count_b",
-        "stars_ratio",
-        "watchers_ratio",
-        "forks_ratio",
-        "size_ratio",
-        "stars_decay",
-        "stars_decay_b",
-        "forks_decay",
-        "forks_decay_b",
         "age_days",
         "age_days_b",
         "days_since_update",
         "days_since_update_b",
+        # Temporal decay features
+        "stars_decay_0.0001",
+        "stars_decay_b_0.0001",
+        "forks_decay_0.0001",
+        "forks_decay_b_0.0001",
+        "issues_decay_0.0001",
+        "issues_decay_b_0.0001",
+        "stars_decay_0.001",
+        "stars_decay_b_0.001",
+        "forks_decay_0.001",
+        "forks_decay_b_0.001",
+        "issues_decay_0.001",
+        "issues_decay_b_0.001",
+        "stars_decay_0.01",
+        "stars_decay_b_0.01",
+        "forks_decay_0.01",
+        "forks_decay_b_0.01",
+        "issues_decay_0.01",
+        "issues_decay_b_0.01",
+        # Target encoding features
+        "project_mean_weight_a",
+        "project_mean_weight_b",
+        # Ratio and interaction features
+        "stars_ratio",
+        "watchers_ratio",
+        "forks_ratio",
+        "size_ratio",
+        "stars_forks_interaction",
+        "stars_forks_interaction_b",
+        "engagement_score",
+        "engagement_score_b",
+        "stars_per_day",
+        "stars_per_day_b",
+        "forks_per_day",
+        "forks_per_day_b",
         "log_stars",
         "log_stars_b",
         "log_watchers",
@@ -278,14 +306,16 @@ def main():
 
     # Add features
     df_train_full = add_github_projects_data(df_train, df_projects)
-    df_train_full = extract_ratio_features(df_train_full)
     df_train_full = extract_temporal_features(df_train_full)
     df_train_full = extract_activity_features(df_train_full)
+    df_train_full = add_target_encoding(df_train_full)
+    df_train_full = extract_ratio_features(df_train_full)
 
     df_test_full = add_github_projects_data(df_test, df_projects)
-    df_test_full = extract_ratio_features(df_test_full)
     df_test_full = extract_temporal_features(df_test_full)
     df_test_full = extract_activity_features(df_test_full)
+    df_test_full = add_target_encoding(df_test_full, df_train)
+    df_test_full = extract_ratio_features(df_test_full)
 
     # Prepare features and target
     features = get_features()

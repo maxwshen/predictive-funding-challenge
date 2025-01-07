@@ -142,35 +142,49 @@ def extract_activity_features(df: pl.DataFrame) -> pl.DataFrame:
     """
     features = df.clone()
 
-    # Add temporal decay features
-    features = features.with_columns(
-        [
-            (
-                pl.col("stars")
-                * pl.col("days_since_update").map_elements(
-                    lambda x: np.exp(-0.001 * x), return_dtype=pl.Float64
-                )
-            ).alias("stars_decay"),
-            (
-                pl.col("stars_b")
-                * pl.col("days_since_update_b").map_elements(
-                    lambda x: np.exp(-0.001 * x), return_dtype=pl.Float64
-                )
-            ).alias("stars_decay_b"),
-            (
-                pl.col("forks")
-                * pl.col("days_since_update").map_elements(
-                    lambda x: np.exp(-0.001 * x), return_dtype=pl.Float64
-                )
-            ).alias("forks_decay"),
-            (
-                pl.col("forks_b")
-                * pl.col("days_since_update_b").map_elements(
-                    lambda x: np.exp(-0.001 * x), return_dtype=pl.Float64
-                )
-            ).alias("forks_decay_b"),
-        ]
-    )
+    # Add temporal decay features with different time scales
+    decay_rates = [0.0001, 0.001, 0.01]  # Slow, medium, fast decay
+    for rate in decay_rates:
+        features = features.with_columns(
+            [
+                (
+                    pl.col("stars")
+                    * pl.col("days_since_update").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"stars_decay_{rate}"),
+                (
+                    pl.col("stars_b")
+                    * pl.col("days_since_update_b").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"stars_decay_b_{rate}"),
+                (
+                    pl.col("forks")
+                    * pl.col("days_since_update").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"forks_decay_{rate}"),
+                (
+                    pl.col("forks_b")
+                    * pl.col("days_since_update_b").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"forks_decay_b_{rate}"),
+                (
+                    pl.col("open_issues")
+                    * pl.col("days_since_update").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"issues_decay_{rate}"),
+                (
+                    pl.col("open_issues_b")
+                    * pl.col("days_since_update_b").map_elements(
+                        lambda x: np.exp(-rate * x), return_dtype=pl.Float64
+                    )
+                ).alias(f"issues_decay_b_{rate}"),
+            ]
+        )
 
     # Add interaction features
     features = features.with_columns(
@@ -226,6 +240,27 @@ def extract_ratio_features(df: pl.DataFrame) -> pl.DataFrame:
                 pl.col("subscribers_count")
                 / (pl.col("subscribers_count") + pl.col("subscribers_count_b"))
             ).alias("subscribers_count_ratio"),
+            # New interaction features
+            (pl.col("stars") * pl.col("forks")).alias("stars_forks_interaction"),
+            (pl.col("stars_b") * pl.col("forks_b")).alias("stars_forks_interaction_b"),
+            (pl.col("watchers") * pl.col("subscribers_count")).alias(
+                "engagement_score"
+            ),
+            (pl.col("watchers_b") * pl.col("subscribers_count_b")).alias(
+                "engagement_score_b"
+            ),
+            (
+                pl.col("stars") / pl.max_horizontal([pl.col("age_days"), pl.lit(1)])
+            ).alias("stars_per_day"),
+            (
+                pl.col("stars_b") / pl.max_horizontal([pl.col("age_days_b"), pl.lit(1)])
+            ).alias("stars_per_day_b"),
+            (
+                pl.col("forks") / pl.max_horizontal([pl.col("age_days"), pl.lit(1)])
+            ).alias("forks_per_day"),
+            (
+                pl.col("forks_b") / pl.max_horizontal([pl.col("age_days_b"), pl.lit(1)])
+            ).alias("forks_per_day_b"),
         ]
     )
 
@@ -238,6 +273,119 @@ def extract_ratio_features(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("watchers_b").fill_null(0).log1p().alias("log_watchers_b"),
             pl.col("forks").fill_null(0).log1p().alias("log_forks"),
             pl.col("forks_b").fill_null(0).log1p().alias("log_forks_b"),
+        ]
+    )
+
+    return features
+
+
+def add_target_encoding(
+    df: pl.DataFrame, df_train: pl.DataFrame | None = None
+) -> pl.DataFrame:
+    """
+    Add target encoding features based on historical project weights.
+    For test data, uses all training data for encoding.
+    For training data, uses leave-one-out encoding to prevent leakage.
+
+    Args:
+        df: DataFrame to add features to
+        df_train: Training DataFrame (only needed for test data encoding)
+
+    Returns:
+        DataFrame with added target encoding features
+    """
+    features = df.clone()
+
+    if df_train is not None:
+        # For test data, use all training data
+        mean_weight_a = (
+            df_train.group_by("project_a")
+            .agg(pl.col("weight_a").mean().alias("mean_weight"))
+            .sort("project_a")
+        )
+        mean_weight_b = (
+            df_train.group_by("project_b")
+            .agg(pl.col("weight_b").mean().alias("mean_weight"))
+            .sort("project_b")
+        )
+        # Calculate global mean from training data
+        global_mean = df_train.get_column("weight_a").mean()
+    else:
+        # For training data, use leave-one-out encoding
+        weight_sums = features.group_by("project_a").agg(
+            pl.col("weight_a").sum().alias("sum_weights"),
+            pl.count("weight_a").alias("count"),
+        )
+        mean_weight_a = (
+            features.join(weight_sums, on="project_a", how="left")
+            .with_columns(
+                [
+                    pl.when(pl.col("count") > 1)
+                    .then(
+                        (pl.col("sum_weights") - pl.col("weight_a"))
+                        / (pl.col("count") - 1)
+                    )
+                    .otherwise(pl.col("weight_a"))
+                    .alias("mean_weight")
+                ]
+            )
+            .select(["project_a", "mean_weight"])
+            .unique()
+            .sort("project_a")
+        )
+
+        weight_sums = features.group_by("project_b").agg(
+            pl.col("weight_b").sum().alias("sum_weights"),
+            pl.count("weight_b").alias("count"),
+        )
+        mean_weight_b = (
+            features.join(weight_sums, on="project_b", how="left")
+            .with_columns(
+                [
+                    pl.when(pl.col("count") > 1)
+                    .then(
+                        (pl.col("sum_weights") - pl.col("weight_b"))
+                        / (pl.col("count") - 1)
+                    )
+                    .otherwise(pl.col("weight_b"))
+                    .alias("mean_weight")
+                ]
+            )
+            .select(["project_b", "mean_weight"])
+            .unique()
+            .sort("project_b")
+        )
+        # Calculate global mean from current data
+        global_mean = features.get_column("weight_a").mean()
+
+    # Add target encoding features
+    features = (
+        features.join(
+            mean_weight_a,
+            left_on="project_a",
+            right_on="project_a",
+            how="left",
+        )
+        .with_columns([pl.col("mean_weight").alias("project_mean_weight_a")])
+        .drop("mean_weight")
+    )
+
+    features = (
+        features.join(
+            mean_weight_b,
+            left_on="project_b",
+            right_on="project_b",
+            how="left",
+        )
+        .with_columns([pl.col("mean_weight").alias("project_mean_weight_b")])
+        .drop("mean_weight")
+    )
+
+    # Fill nulls with global mean
+    features = features.with_columns(
+        [
+            pl.col("project_mean_weight_a").fill_null(global_mean),
+            pl.col("project_mean_weight_b").fill_null(global_mean),
         ]
     )
 
