@@ -14,7 +14,7 @@ def get_dataframes() -> Tuple[pl.DataFrame, pl.DataFrame]:
     Returns:
         Tuple[pl.DataFrame, pl.DataFrame]: Tuple containing the train and test DataFrames
     """
-    raw_dir = Path("../data/raw")
+    raw_dir = Path("data/raw")
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     train_cache = raw_dir / "dataset.csv"
@@ -91,21 +91,12 @@ def get_projects_info(projects: List[str]) -> pl.DataFrame:
     Returns:
         pl.DataFrame containing GitHub project information for all projects
     """
-    processed_dir = Path("../data/processed")
+    processed_dir = Path("data/processed")
     processed_dir.mkdir(parents=True, exist_ok=True)
     cache_file = processed_dir / "projects_info.parquet"
 
-    # Try to load existing cache
     if cache_file.exists():
-        cached_df = pl.read_parquet(cache_file)
-        cached_projects = set(cached_df["full_name"].to_list())
-        # Only fetch missing projects
-        projects_to_fetch = [p for p in projects if p not in cached_projects]
-        if not projects_to_fetch:
-            return cached_df
-    else:
-        cached_df = None
-        projects_to_fetch = projects
+        return pl.read_parquet(cache_file)
 
     data = []
     with httpx.Client(
@@ -113,20 +104,11 @@ def get_projects_info(projects: List[str]) -> pl.DataFrame:
         follow_redirects=True,
         limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
     ) as client:
-        for project_id in projects_to_fetch:
+        for project_id in projects:
             info = get_repository_info(project_id, client)
             if info:
                 data.append(info)
 
-    new_df = pl.DataFrame(data)
-
-    # Merge with cache if it exists
-    if cached_df is not None:
-        final_df = pl.concat([cached_df, new_df])
-    else:
-        final_df = new_df
-
-    # Update cache
-    final_df.write_parquet(cache_file)
-
-    return final_df
+    df = pl.DataFrame(data)
+    df.write_parquet(cache_file)
+    return df
