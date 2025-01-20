@@ -28,7 +28,6 @@ def add_github_projects_data(
     """
     Add GitHub projects data to both projects in the DataFrame.
     """
-
     df_projects = df_projects.select(
         pl.col("full_name").str.to_lowercase().alias("project_id"),
         pl.col("private").alias("is_private"),
@@ -359,27 +358,48 @@ def add_target_encoding(
         global_mean = features.get_column("weight_a").mean()
 
     # Add target encoding features
-    features = (
-        features.join(
-            mean_weight_a,
-            left_on="project_a",
-            right_on="project_a",
-            how="left",
-        )
-        .with_columns([pl.col("mean_weight").alias("project_mean_weight_a")])
-        .drop("mean_weight")
-    )
+    print(f'Adding target encoding features ...')
 
-    features = (
-        features.join(
-            mean_weight_b,
-            left_on="project_b",
-            right_on="project_b",
-            how="left",
+    chunk_size = 1000
+    n_chunks = (len(features) + chunk_size - 1) // chunk_size
+
+    result_dfs = []
+    for i in range(n_chunks):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, len(features))
+        
+        chunk = features[start_idx:end_idx]
+        chunk_result = (
+            chunk.join(
+                mean_weight_a,
+                left_on="project_a",
+                right_on="project_a",
+                how="left",
+            )
+            .with_columns([pl.col("mean_weight").alias("project_mean_weight_a")])
+            .drop("mean_weight")
         )
-        .with_columns([pl.col("mean_weight").alias("project_mean_weight_b")])
-        .drop("mean_weight")
-    )
+        result_dfs.append(chunk_result)
+    features = pl.concat(result_dfs)
+    
+    result_dfs = []
+    for i in range(n_chunks):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, len(features))
+        
+        chunk = features[start_idx:end_idx]
+        chunk_result = (
+            chunk.join(
+                mean_weight_b,
+                left_on="project_b",
+                right_on="project_b",
+                how="left",
+            )
+            .with_columns([pl.col("mean_weight").alias("project_mean_weight_b")])
+            .drop("mean_weight")
+        )
+        result_dfs.append(chunk_result)
+    features = pl.concat(result_dfs)
 
     # Fill nulls with global mean
     features = features.with_columns(

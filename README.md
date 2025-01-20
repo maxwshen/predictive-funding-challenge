@@ -1,5 +1,15 @@
 # Predictive Funding Challenge 🌱
 
+---
+
+A fork of davidgasquez's repo, resolving errors to enable it to run with 10GB RAM.
+
+- Chunked join on target encoding
+
+- 
+
+---
+
 A machine learning challenge to predict relative funding between open source projects, aiming to create scalable and fair public goods funding allocation.
 
 ## 📦 Data

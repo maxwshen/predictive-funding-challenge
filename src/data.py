@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Tuple
+from tqdm import tqdm
 
 import httpx
 import polars as pl
@@ -51,19 +52,13 @@ def get_dataframes() -> Tuple[pl.DataFrame, pl.DataFrame]:
     return df_train, df_test
 
 
+import time
 def get_repository_info(repository_id: str, client: httpx.Client) -> Dict:
     """
-    Fetch repository information from GitHub API for a given repo URL.
-
-    Args:
-        repo_url: GitHub repository URL
-        client: httpx.Client instance to use for requests
-
-    Returns:
-        Dict containing repository information or empty dict if request fails
+    Fetch repository information from GitHub API for a given repo ID.
+    Includes rate limit handling and better error reporting.
     """
     api_url = f"https://api.github.com/repos/{repository_id}"
-
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
@@ -72,43 +67,81 @@ def get_repository_info(repository_id: str, client: httpx.Client) -> Dict:
 
     try:
         response = client.get(api_url, headers=headers)
+        
+        # Handle rate limiting
+        if response.status_code == 403 and 'X-RateLimit-Remaining' in response.headers:
+            remaining = int(response.headers['X-RateLimit-Remaining'])
+            if remaining == 0:
+                reset_time = int(response.headers['X-RateLimit-Reset'])
+                sleep_time = reset_time - time.time() + 1
+                if sleep_time > 0:
+                    print(f"Rate limit exceeded. Waiting {sleep_time:.0f} seconds...")
+                    time.sleep(sleep_time)
+                    return get_repository_info(repository_id, client)
+        
         response.raise_for_status()
         return response.json()
-    except httpx.HTTPError:
-        print(f"Error fetching data for {repository_id}")
-        print(response.text)
+    except httpx.HTTPError as e:
+        print(f"Error fetching data for {repository_id}: {str(e)}")
+        if response.status_code != 404:  # Don't print response text for 404s
+            print(f"Response: {response.text}")
         return {}
 
 
-def get_projects_info(projects: List[str]) -> pl.DataFrame:
-    """
-    Fetch project information from GitHub API for a list of project IDs and return as a Polars DataFrame.
-    Uses local cache if available.
+from typing import Iterator
+def batch_projects(projects: List[str], batch_size: int = 100) -> Iterator[List[str]]:
+    """Yield projects in batches to control memory usage."""
+    for i in range(0, len(projects), batch_size):
+        yield projects[i:i + batch_size]
 
+
+def get_projects_info(projects: List[str], batch_size: int = 5) -> pl.DataFrame:
+    """
+    Fetch project information from GitHub API with batching and proper resource management.
+    
     Args:
         projects: List of GitHub repository IDs
-
+        batch_size: Number of projects to process in each batch
+    
     Returns:
         pl.DataFrame containing GitHub project information for all projects
     """
+    print(f'Found {len(projects)} projects...')
     processed_dir = Path("data/processed")
     processed_dir.mkdir(parents=True, exist_ok=True)
     cache_file = processed_dir / "projects_info.parquet"
 
+    # If cache exists, load it and only process new projects
+    existing_data = []
     if cache_file.exists():
-        return pl.read_parquet(cache_file)
+        existing_df = pl.read_parquet(cache_file)
+        print(f'Found {len(existing_df)=}')
+        existing_projects = set(existing_df['full_name'].to_list())
+        projects = [p for p in projects if p not in existing_projects]
+        existing_data = existing_df.to_dicts()
+        if not projects:
+            return existing_df
+        print(f'Processing {len(projects)} new projects...')
 
-    data = []
+    all_data = existing_data
+    
+    # Process in batches
     with httpx.Client(
-        transport=httpx.HTTPTransport(retries=5, verify=False),
-        follow_redirects=True,
+        transport=httpx.HTTPTransport(retries=3),
+        timeout=30.0,
         limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
     ) as client:
-        for project_id in projects:
-            info = get_repository_info(project_id, client)
-            if info:
-                data.append(info)
+        for batch in tqdm(list(batch_projects(projects, batch_size))):
+            batch_data = []
+            for project_id in batch:
+                info = get_repository_info(project_id, client)
+                if info:
+                    batch_data.append(info)
+            
+            # Save batch to temporary file
+            if batch_data:
+                all_data.extend(batch_data)
+                temp_df = pl.DataFrame(all_data)
+                temp_df.write_parquet(cache_file)
 
-    df = pl.DataFrame(data)
-    df.write_parquet(cache_file)
-    return df
+    return pl.DataFrame(all_data)

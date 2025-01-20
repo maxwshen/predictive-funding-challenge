@@ -273,6 +273,7 @@ def train_final_model(
 
 def main():
     # Load and prepare data
+    print('Fetching train/test dataframes ...')
     df_train, df_test = get_dataframes()
 
     # Mirror training data
@@ -302,13 +303,20 @@ def main():
         .unique()
         .to_list()
     )
+    print('Getting project info ...')
     df_projects = get_projects_info(projects)
 
     # Add features
+    print('Adding features ...')
+    print('Adding github projects ...')
     df_train_full = add_github_projects_data(df_train, df_projects)
+    print('Extracting temporal features ...')
     df_train_full = extract_temporal_features(df_train_full)
+    print('Extracting activity features ...')
     df_train_full = extract_activity_features(df_train_full)
+    print('Adding target encoding ...')
     df_train_full = add_target_encoding(df_train_full)
+    print('Extracting ratio features ...')
     df_train_full = extract_ratio_features(df_train_full)
 
     df_test_full = add_github_projects_data(df_test, df_projects)
