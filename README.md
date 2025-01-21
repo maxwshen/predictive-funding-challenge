@@ -1,12 +1,9 @@
 # Predictive Funding Challenge 🌱
 
----
+A fork of davidgasquez's repo:
 
-A fork of davidgasquez's repo, resolving errors to enable it to run with 10GB RAM.
-
-- Chunked join on target encoding
-
-- 
+- Resolved errors to enable it to run with 10GB RAM
+- Added functionality in `src/train_decorrelate.py` to explicitly train models to make different errors from davidgasquez's model, with the goal of improving overall ensemble quality by explicitly increasing model diversity.
 
 ---
 

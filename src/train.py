@@ -71,8 +71,8 @@ def get_features() -> list[str]:
         "issues_decay_0.01",
         "issues_decay_b_0.01",
         # Target encoding features
-        "project_mean_weight_a",
-        "project_mean_weight_b",
+        # "project_mean_weight_a",
+        # "project_mean_weight_b",
         # Ratio and interaction features
         "stars_ratio",
         "watchers_ratio",
@@ -309,21 +309,29 @@ def main():
     # Add features
     print('Adding features ...')
     print('Adding github projects ...')
+    print(df_train.shape)
     df_train_full = add_github_projects_data(df_train, df_projects)
+    print(df_train_full.shape)
     print('Extracting temporal features ...')
     df_train_full = extract_temporal_features(df_train_full)
     print('Extracting activity features ...')
     df_train_full = extract_activity_features(df_train_full)
-    print('Adding target encoding ...')
-    df_train_full = add_target_encoding(df_train_full)
+    # print('Adding target encoding ...')
+    # df_train_full = add_target_encoding(df_train_full)
     print('Extracting ratio features ...')
     df_train_full = extract_ratio_features(df_train_full)
 
+    print(df_test.shape)
     df_test_full = add_github_projects_data(df_test, df_projects)
+    print(df_test_full.shape)
     df_test_full = extract_temporal_features(df_test_full)
+    print(df_test_full.shape)
     df_test_full = extract_activity_features(df_test_full)
-    df_test_full = add_target_encoding(df_test_full, df_train)
+    print(df_test_full.shape)
+    # df_test_full = add_target_encoding(df_test_full, df_train)
+    # print(df_test_full.shape)
     df_test_full = extract_ratio_features(df_test_full)
+    print(df_test_full.shape)
 
     # Prepare features and target
     features = get_features()
@@ -334,9 +342,15 @@ def main():
     selected_features = select_features(X, y, features)
     X = df_train_full.select(selected_features).to_numpy()
 
+    with open('data/models/selected_features.txt', 'w') as f:
+        f.write(','.join(selected_features))
+
     # Optimize hyperparameters
     print("\nOptimizing hyperparameters...")
-    best_params = optimize_hyperparameters(X, y)
+    best_params = optimize_hyperparameters(X, y, n_trials=50)
+    import yaml
+    with open('data/models/best_hyperparameters.yaml', 'w') as f:
+        yaml.dump(best_params, f)
 
     # Train and evaluate with best parameters
     mean_mse, std_mse = train_and_evaluate(X, y, best_params)
@@ -346,6 +360,7 @@ def main():
 
     # Train final model with best parameters
     model = train_final_model(X, y, best_params)
+    model.save_model('data/models/best_model.txt')
 
     # Generate predictions
     X_test = df_test_full.select(selected_features).to_numpy()
